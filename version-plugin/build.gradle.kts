@@ -2,9 +2,15 @@ plugins {
     `kotlin-dsl`
 }
 gradlePlugin {
-    plugins.register("versionPlugin") {
-        id = "version-plugin"
-        implementationClass = "com.example.plugin.VersionPlugin"
+    plugins{
+        register("versionPlugin") {
+            id = "version-plugin"
+            implementationClass = "com.example.plugin.VersionPlugin"
+        }
+        register("ComposePlugin") {
+            id = "compose-plugin"
+            implementationClass = "com.example.plugin.ComposePlugin"
+        }
     }
 }
 

@@ -1,56 +1,129 @@
+# 复合构建
 
+## 为什么要使用复合构建
+
+依赖管理一直是一个优化项目，从硬编码到`ext`，再发展到`buildSrc`，尽管代码量增长了，但是对于构建一直在追求更快更干净。`buildSrc`虽然给了我们 clean 的使用方式，但是 Gradle 最大的低效是它的单线程[配置阶段](https://docs.gradle.org/current/userguide/build_lifecycle.html#sec:build_phases)，这意味着每个额外的模块都会对构建产生持续的开销，因此我们依然经历着配置时间的线性增长，通常大型项目编译一次，要去喝杯咖啡。
+
+使用 Gradle 的[复合构建工具](https://docs.gradle.org/current/userguide/composite_builds.html)就避免了在使用复合构建时很容易观察到的配置时间损失，依赖不再是全量编译了。复合构建将大型项目构建分解为更小、更独立的块，这些块可以根据需要独立或一起工作，包含的构建不与复合构建或其他包含的构建共享任何配置。每个包含的构建都是独立配置和执行的。
 
 ## 基本使用
 
-### 创建版本依赖插件 Module 
+### 创建版本依赖插件 Module
 
 这个步骤可以手动创建，也可以借助 Android Studio 创建。
 
 - #### 手动创建
 
-  1. 切换到 Project 视图，创建 version-plugin 文件夹，在  version-plugin 文件夹里创建 src -> main -> java 文件
+    1. 切换到 Project 视图，创建 version-plugin 文件夹，在  version-plugin 文件夹里创建 src -> main -> java 文件
 
-  2. 在 java 文件夹里创建你的包名文件夹，例如 com -> example -> plugin (不想要包名文件夹的话，这一步可以省略),在 plugin 文件夹里创建两个文件`Dependencies.kt`和`VersionPlugin.kt`
+    2. 在 java 文件夹里创建你的包名文件夹，例如 com -> example -> plugin (不想要包名文件夹的话，这一步可以省略),在 plugin 文件夹里创建两个文件`Dependencies.kt`和`VersionPlugin.kt`
 
-  3. 在 version-plugin 文件夹下创建`build.gradle.kts`文件，这里使用 kotlin DSL 更方便
+    3. 在 version-plugin 文件夹下创建`build.gradle.kts`文件，这里使用 kotlin DSL 更方便
 
-  4. 在`build.gradle.kts`里添加所需的插件
+    4. 在`build.gradle.kts`里添加所需的插件
 
-     ```
-     plugins {
-         `kotlin-dsl`
-     }
-     repositories {
-         mavenCentral()
-     }
-     ```
-  
-  5. 在项目根目录的`settings.gradle`里添加`includeBuild("version-plugin")`引入插件
-  
+       ```
+       plugins {
+           `kotlin-dsl`
+       }
+       ```
+
+    5. 在version-plugin 根目录创建`settings.gradle.kts`,并添加依赖仓库
+
+       ```
+       dependencyResolutionManagement {
+           repositories {
+               google()
+               mavenCentral()
+           }
+       }
+       rootProject.name = "version-plugin"
+       include (":version-plugin")
+       ```
+
+
+
+6. 在项目根目录的`settings.gradle`里添加`includeBuild("version-plugin")`引入插件
+
+   ```
+   pluginManagement {
+       includeBuild("version-plugin")
+       repositories {
+           google()
+           mavenCentral()
+           gradlePluginPortal()
+       }
+   }
+   dependencyResolutionManagement {
+       repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+       repositories {
+           google()
+           mavenCentral()
+       }
+   }
+   rootProject.name = "ComposeBuild"
+   include ':app'
+   ```
+
+
+
 - #### AS创建
 
-  ![](screenshots/截屏2023-02-21 11.01.52.png)
+  ![](./screenshots/截屏2023-02-21 11.01.52.png)
 
-  1. File -> New -> New Module ,选择 `Java or kotlin Library`，创建一个 Module
-  
-  2. 创建`Dependencies.kt`文件
-  
-  3. 删除 version-plugin 文件夹下的 libs 文件夹
-  
-  4. 把`build.gradle`转化为`build.gradle.kts`文件，并且添加所需插件
-  
-     ```
-     plugins {
-         `kotlin-dsl`
-     }
-     repositories {
-         mavenCentral()
-     }
-     ```
-  
-  5. 项目根目录`settings.gradle`里的`include ':version-plugin'`替换为`includeBuild("version-plugin")`
+    1. File -> New -> New Module ,选择 `Java or kotlin Library`，创建一个 Module
 
-![项目目录](screenshots/截屏2023-02-22%2011.15.13.png)
+    2. 创建`Dependencies.kt`文件
+
+    3. 删除 version-plugin 文件夹下的 libs 文件夹
+
+    4. 把`build.gradle`转化为`build.gradle.kts`文件
+
+       ```
+       plugins {
+           `kotlin-dsl`
+       }
+       ```
+
+    5. 在 version-plugin 根目录创建`settings.gradle.kts`,并添加依赖仓库
+
+       ```
+       dependencyResolutionManagement {
+           repositories {
+               google()
+               mavenCentral()
+           }
+       }
+       rootProject.name = "version-plugin"
+       include (":version-plugin")
+       ```
+
+    6. 项目根目录`settings.gradle`里的`include ':version-plugin'`替换为`includeBuild("version-plugin")`,为了规范，把它注册在上面的`pluginManagement`里
+
+       ```
+       pluginManagement {
+           includeBuild("version-plugin")
+           repositories {
+               google()
+               mavenCentral()
+               gradlePluginPortal()
+           }
+       }
+       dependencyResolutionManagement {
+           repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+           repositories {
+               google()
+               mavenCentral()
+           }
+       }
+       rootProject.name = "ComposeBuild"
+       include ':app'
+       //include ':version-plugin'
+       ```
+
+       完成后的项目目录：
+
+![项目目录](./screenshots/截屏2023-02-22 11.15.13.png)
 
 ### 编写插件
 
@@ -111,16 +184,12 @@ object Libraries {
 
 #### 注册插件
 
-插件要能被引入，需要注册,在`build.gradle.kts`中
+插件要能被别的 Module 引入，需要注册在插件 Module 的`build.gradle.kts`中
 
 ```
 plugins {
     `kotlin-dsl`
 }
-repositories {
-    mavenCentral()
-}
-
 gradlePlugin {
     plugins.register("versionPlugin") {
         id = "version-plugin"
@@ -131,7 +200,7 @@ gradlePlugin {
 
 ### 使用
 
-在用到的module里添加插件：
+在用到的 Module 里添加插件，app 目录下的`build.gradle`：
 
 ```
 plugins {
@@ -152,7 +221,7 @@ implementation Libraries.coreKtx
 
 ### 依赖优化
 
-上面一通操作，在使用的时候，并没有方便多少。为了不再一个一个引入依赖，我们需要写个扩展优化。为了方便操作和提示，首先把`build.gradle`转为`build.gradle.kts`
+上面一通操作，在使用的时候，并没有方便多少。为了不再一个一个的引入依赖，我们需要写个扩展优化。为了方便操作和提示，建议使用 Kotlin 的 DSL ，首先把`build.gradle`转为`build.gradle.kts`
 
 转化前：
 
@@ -300,7 +369,7 @@ dependencies {
 }
 ```
 
-`dependencies`里面还是需要一个一个的依赖，有时候项目并不是一个 Module ，每个`build.gradle`都要写，简化这个繁琐的过程，就需要把依赖分类集中处理。
+`dependencies`里面还是需要一个一个的依赖，有时候项目并不是一个 Module 而是多 Module 的状态，每个`build.gradle`都要写依赖，要简化这个繁琐的过程，就需要把依赖分类集中处理。
 
 在插件 Module 里新建`Extension.kt`，可以把依赖库分为kotlin、android、compose、test四部分。扩展`DependencyHandlerScope`：
 
@@ -361,7 +430,7 @@ dependencies {
 
 上面只优化了`dependencies`这个闭包，`build.gradle.kts`依旧很多东西，既然写了一个插件，我们就用插件实现整个配置。
 
-模块的`build.gradle.kts`一共有三个闭包：`plugin`、`android`、 `dependencies`，对应插件其实也是现实这三个配置，回到最开始的`VersionPlugin`中：
+app的`build.gradle.kts`一共有三个闭包：`plugin`、`android`、 `dependencies`，对应插件其实也是现实这三个配置，回到最开始的`VersionPlugin`中：
 
 ```
 class VersionPlugin : Plugin<Project> {
@@ -376,6 +445,8 @@ class VersionPlugin : Plugin<Project> {
 ```
 
 #### 1. 首先实现配置`plugin`
+
+这个闭包就是引入插件，把原 Module 用到的插件搬过来即可，这里要去掉原先加入的自身插件
 
 ```
 //配置plugin
@@ -393,18 +464,6 @@ plugins.run {
 plugins {
     `kotlin-dsl`
 }
-repositories {
-    google()
-    mavenCentral()
-}
-gradlePlugin {
-    plugins.register("versionPlugin") {
-        id = "version-plugin"
-        implementationClass = "com.example.plugin.VersionPlugin"
-    }
-}
-
-
 dependencies {
     implementation("com.android.tools.build:gradle:7.3.1")
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0")
@@ -480,15 +539,89 @@ fun CommonExtension<*, *, *, *>.kotlinOptions(block: KotlinJvmOptions.() -> Unit
    }
    ```
 
-4. 依赖插件
+    4. 依赖插件
 
-   把 Module 的`build.gradle.kts`里的内容都删了，只依赖下刚完成的插件：
+       把 app Module 的`build.gradle.kts`里的内容都删了，只依赖下刚完成的插件：
 
-   ```
-   plugins {
-       id("version-plugin")
-   }
-   ```
+       ```
+       plugins {
+           id("version-plugin")
+       }
+       ```
 
-   很清爽的感觉。
+       是不是很清爽的感觉？
+
+### 多个插件
+
+如果是多 Module 的项目，每个 Module 的依赖会不一样，所以可以在 version-plugin 中编写多个`plugin`，然后注册`id`，在不同的 Module 里使用，修改某个依赖，只构建这个 Module 的依赖，达到隔离构建的目的。
+
+## 复合构建
+
+上面单一 Module 中单独的插件，依赖的库并没有达到隔离构建的目的，如果我们只是更改了`composeUi`版本，整个依赖都要重新编译。要实现隔离，需要更精细化的拆分，比如把`compose`部分单独出来。
+
+新建一个`ComposePlugin.kt`,把原来插件中的关于`compose`的配置拷贝过来：
+
+```
+class ComposePlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            //配置compose
+            extensions.configure<ApplicationExtension> {
+                buildFeatures {
+                    compose = true
+                }
+                composeOptions {
+                    kotlinCompilerExtensionVersion = Versions.kotlinCompilerExtensionVersion
+                }
+            }
+            dependencies {
+                composeProject()
+            }
+        }
+    }
+}
+```
+
+插件写完需要注册：
+
+```
+gradlePlugin {
+    plugins.register("versionPlugin") {
+        id = "version-plugin"
+        implementationClass = "com.example.plugin.VersionPlugin"
+    }
+    plugins.register("ComposePlugin") {
+        id = "compose-plugin"
+        implementationClass = "com.example.plugin.ComposePlugin"
+    }
+}
+```
+
+这里可以优化下写法：
+
+```
+gradlePlugin {
+    plugins{
+        register("versionPlugin") {
+            id = "version-plugin"
+            implementationClass = "com.example.plugin.VersionPlugin"
+        }
+        register("ComposePlugin") {
+            id = "compose-plugin"
+            implementationClass = "com.example.plugin.ComposePlugin"
+        }
+    }
+}
+```
+
+在 app 模块里引入：
+
+```
+plugins {
+    id("version-plugin")
+    id("compose-plugin")
+}
+```
+
+这样如果修改`compose`版本，并不会构建别的依赖。
 

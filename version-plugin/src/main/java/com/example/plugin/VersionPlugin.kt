@@ -50,12 +50,6 @@ class VersionPlugin : Plugin<Project> {
                 kotlinOptions {
                     jvmTarget = JavaVersion.VERSION_1_8.toString()
                 }
-                buildFeatures {
-                    compose = true
-                }
-                composeOptions {
-                    kotlinCompilerExtensionVersion = "1.1.1"
-                }
                 packagingOptions {
                     resources {
                         excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -66,7 +60,6 @@ class VersionPlugin : Plugin<Project> {
             dependencies {
                 kotlinProject()
                 androidProject()
-                composeProject()
                 androidTest()
             }
         }
