@@ -1,10 +1,6 @@
 plugins {
     `kotlin-dsl`
 }
-repositories {
-    google()
-    mavenCentral()
-}
 gradlePlugin {
     plugins.register("versionPlugin") {
         id = "version-plugin"

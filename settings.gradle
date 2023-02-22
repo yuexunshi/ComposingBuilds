@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("version-plugin")
     repositories {
         google()
         mavenCentral()
@@ -14,5 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "ComposingBuilds"
 include ':app'
-includeBuild("version-plugin")
 //include ':version-plugin'

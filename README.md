@@ -29,7 +29,7 @@
   
 - #### AS创建
 
-  ![](./pic/截屏2023-02-21 11.01.52.png)
+  ![](screenshots/截屏2023-02-21 11.01.52.png)
 
   1. File -> New -> New Module ,选择 `Java or kotlin Library`，创建一个 Module
   
@@ -50,7 +50,7 @@
   
   5. 项目根目录`settings.gradle`里的`include ':version-plugin'`替换为`includeBuild("version-plugin")`
 
-![项目目录](./pic/截屏2023-02-21 12.00.55.png)
+![项目目录](screenshots/截屏2023-02-22%2011.15.13.png)
 
 ### 编写插件
 

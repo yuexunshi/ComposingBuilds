@@ -9,6 +9,7 @@
               <build path="$PROJECT_DIR$/version-plugin" name="version-plugin">
                 <projects>
                   <project path="$PROJECT_DIR$/version-plugin" />
+                  <project path="$PROJECT_DIR$/version-plugin/version-plugin" />
                 </projects>
               </build>
             </builds>
@@ -22,6 +23,7 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/version-plugin" />
+            <option value="$PROJECT_DIR$/version-plugin/version-plugin" />
           </set>
         </option>
       </GradleProjectSettings>
